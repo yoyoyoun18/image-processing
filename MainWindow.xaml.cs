@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace ImageProcessingByOpenCV
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : System.Windows.Window
     {
         private Mat _originalImage;
 
