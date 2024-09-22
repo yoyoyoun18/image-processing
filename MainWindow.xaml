@@ -5,17 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ImageProcessingByOpenCV"
         mc:Ignorable="d"
-        Title="이미지 처리" Height="600" Width="800">
+        Title="이미지 처리" Height="600" Width="1200">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="250"/>
         </Grid.ColumnDefinitions>
-        <Image x:Name="DisplayImage" Grid.Column="0" Stretch="Uniform"/>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Image x:Name="OriginalImage" Grid.Row="0" Stretch="Uniform" Margin="5"/>
+            <Image x:Name="ProcessedImage" Grid.Row="1" Stretch="Uniform" Margin="5"/>
+            <TextBlock Text="원본 이미지" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" FontWeight="Bold"/>
+            <TextBlock Text="처리된 이미지" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" FontWeight="Bold"/>
+        </Grid>
+
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Orientation="Vertical" Margin="10">
-                <Button Content="이미지 불러오기" Click="LoadImage_Click" Margin="0,0,0,10"/>
-
                 <TextBlock Text="처리 모드 선택:" FontWeight="Bold" Margin="0,10,0,5"/>
                 <StackPanel Margin="10,0,0,10">
                     <RadioButton Content="원본 이미지" Tag="None" Checked="ProcessingMode_Changed" IsChecked="True"/>
@@ -24,7 +34,6 @@
                     <RadioButton Content="엣지 감지" Tag="EdgeDetection" Checked="ProcessingMode_Changed"/>
                     <RadioButton Content="색상 감지" Tag="ColorDetection" Checked="ProcessingMode_Changed"/>
                 </StackPanel>
-
                 <TextBlock Text="그레이스케일 강도:" Margin="0,5"/>
                 <StackPanel Orientation="Horizontal">
                     <Slider x:Name="GrayIntensitySlider" Width="150" Minimum="0" Maximum="1" Value="0" 
@@ -32,7 +41,6 @@
                     <TextBlock Text="{Binding ElementName=GrayIntensitySlider, Path=Value, StringFormat={}{0:F2}}" 
                                VerticalAlignment="Center" Margin="5,0,0,0"/>
                 </StackPanel>
-
                 <TextBlock Text="가우시안 블러:" Margin="0,10,0,5"/>
                 <StackPanel Orientation="Horizontal">
                     <Slider x:Name="BlurIntensitySlider" Width="150" Minimum="0" Maximum="50" Value="0" 
@@ -40,7 +48,6 @@
                     <TextBlock Text="{Binding ElementName=BlurIntensitySlider, Path=Value, StringFormat={}{0:F0}}" 
                                VerticalAlignment="Center" Margin="5,0,0,0"/>
                 </StackPanel>
-
                 <TextBlock Text="엣지 검출 임계값:" Margin="0,10,0,5"/>
                 <StackPanel Orientation="Horizontal">
                     <Slider x:Name="EdgeThresholdSlider" Width="150" Minimum="0" Maximum="255" Value="100" 
@@ -48,7 +55,6 @@
                     <TextBlock Text="{Binding ElementName=EdgeThresholdSlider, Path=Value, StringFormat={}{0:F0}}" 
                                VerticalAlignment="Center" Margin="5,0,0,0"/>
                 </StackPanel>
-
                 <TextBlock Text="색상 검출:" Margin="0,10,0,5"/>
                 <ComboBox x:Name="ColorDetectionComboBox" Width="150" SelectionChanged="ColorDetectionComboBox_SelectionChanged">
                     <ComboBoxItem Content="없음"/>
@@ -58,5 +64,14 @@
                 </ComboBox>
             </StackPanel>
         </ScrollViewer>
+
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Button Content="폴더 선택" Click="SelectFolder_Click" Margin="10"/>
+            <ListBox x:Name="ImageListBox" Grid.Row="1" Margin="10" MouseDoubleClick="ImageListBox_MouseDoubleClick"/>
+        </Grid>
     </Grid>
 </Window>

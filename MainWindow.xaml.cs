@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using OpenCvSharp;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -12,6 +13,7 @@ namespace ImageProcessingByOpenCV
         private Mat _originalImage;
         private Mat _processedImage;
         private bool _isProcessing = false;
+        private string _currentFolder;
 
         public enum ProcessingMode
         {
@@ -29,24 +31,43 @@ namespace ImageProcessingByOpenCV
             InitializeComponent();
         }
 
-        private async void LoadImage_Click(object sender, RoutedEventArgs e)
+        private void SelectFolder_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog
+            var dialog = new OpenFileDialog
             {
-                Filter = "Image files (*.png;*.jpeg;*.jpg)|*.png;*.jpeg;*.jpg|All files (*.*)|*.*"
+                ValidateNames = false,
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "폴더 선택",
+                Filter = "Folders|no_files",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
             };
 
-            if (openFileDialog.ShowDialog() == true)
+            if (dialog.ShowDialog() == true)
             {
-                try
-                {
-                    await LoadImageAsync(openFileDialog.FileName);
-                    await ApplySelectedFilterAsync();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"이미지 로드 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                _currentFolder = Path.GetDirectoryName(dialog.FileName);
+                LoadImagesFromFolder(_currentFolder);
+            }
+        }
+
+        private void LoadImagesFromFolder(string folderPath)
+        {
+            string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".bmp", ".gif" };
+            var imageFiles = Directory.GetFiles(folderPath)
+                .Where(file => supportedExtensions.Contains(Path.GetExtension(file).ToLower()))
+                .Select(Path.GetFileName)
+                .ToList();
+
+            ImageListBox.ItemsSource = imageFiles;
+        }
+
+        private async void ImageListBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (ImageListBox.SelectedItem is string selectedFileName)
+            {
+                string fullPath = Path.Combine(_currentFolder, selectedFileName);
+                await LoadImageAsync(fullPath);
+                await ApplySelectedFilterAsync();
             }
         }
 
@@ -122,7 +143,7 @@ namespace ImageProcessingByOpenCV
             {
                 await Dispatcher.InvokeAsync(() =>
                 {
-                    MessageBox.Show($"필터 적용 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"필터 적용 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
             }
             finally
@@ -220,25 +241,33 @@ namespace ImageProcessingByOpenCV
 
         private async Task UpdateDisplayImageAsync()
         {
-            if (_processedImage == null) return;
+            if (_originalImage == null || _processedImage == null) return;
 
-            BitmapSource bitmap = null;
+            BitmapSource originalBitmap = null;
+            BitmapSource processedBitmap = null;
             await Task.Run(() =>
             {
-                using var stream = _processedImage.ToMemoryStream(".png");
-                var bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.StreamSource = stream;
-                bitmapImage.EndInit();
-                bitmapImage.Freeze();
-                bitmap = bitmapImage;
+                originalBitmap = ConvertMatToBitmapSource(_originalImage);
+                processedBitmap = ConvertMatToBitmapSource(_processedImage);
             });
 
             await Dispatcher.InvokeAsync(() =>
             {
-                DisplayImage.Source = bitmap;
+                OriginalImage.Source = originalBitmap;
+                ProcessedImage.Source = processedBitmap;
             });
+        }
+
+        private BitmapSource ConvertMatToBitmapSource(Mat image)
+        {
+            using var stream = image.ToMemoryStream(".png");
+            var bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.StreamSource = stream;
+            bitmapImage.EndInit();
+            bitmapImage.Freeze();
+            return bitmapImage;
         }
 
         private void DisposeImages()
