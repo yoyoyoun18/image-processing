@@ -1,9 +1,10 @@
 ﻿using Microsoft.Win32;
 using OpenCvSharp;
-using OpenCvSharp.WpfExtensions;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace ImageProcessingByOpenCV
 {
@@ -41,10 +42,10 @@ namespace ImageProcessingByOpenCV
             await Task.Run(() =>
             {
                 DisposeCurrentImage();
-                _originalImage = new Mat(fileName);
+                _originalImage = Cv2.ImRead(fileName);
             });
 
-            DisplayImage.Source = _originalImage.ToBitmapSource();
+            DisplayImage.Source = MatToBitmapImage(_originalImage);
         }
 
         private async void ApplyGrayscale_Click(object sender, RoutedEventArgs e)
@@ -57,7 +58,7 @@ namespace ImageProcessingByOpenCV
                 {
                     using var gray = new Mat();
                     Cv2.CvtColor(_originalImage, gray, ColorConversionCodes.BGR2GRAY);
-                    return gray.ToBitmapSource();
+                    return MatToBitmapImage(gray);
                 });
 
                 DisplayImage.Source = grayImage;
@@ -66,6 +67,22 @@ namespace ImageProcessingByOpenCV
             {
                 MessageBox.Show($"Error applying grayscale: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private BitmapImage MatToBitmapImage(Mat mat)
+        {
+            byte[] imageData;
+            Cv2.ImEncode(".png", mat, out imageData);
+
+            using var memoryStream = new MemoryStream(imageData);
+            var bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.StreamSource = memoryStream;
+            bitmapImage.EndInit();
+            bitmapImage.Freeze(); // 다른 스레드에서 사용할 수 있게 합니다.
+
+            return bitmapImage;
         }
 
         private void DisposeCurrentImage()
