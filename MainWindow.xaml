@@ -14,7 +14,12 @@
         <Image x:Name="DisplayImage" Grid.Row="0"/>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <Button Content="Load Image" Click="LoadImage_Click" Margin="5"/>
-            <Button Content="Apply Grayscale" Click="ApplyGrayscale_Click" Margin="5"/>
+            <Button Content="Apply Grayscale" Click="ApplyAdjustableGrayscale_Click" Margin="5"/>
+            <TextBlock Text="Gray Intensity:" VerticalAlignment="Center" Margin="5"/>
+            <Slider x:Name="GrayIntensitySlider" Width="100" Minimum="0" Maximum="1" Value="0.7" 
+                    TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="5"/>
+            <TextBlock Text="{Binding ElementName=GrayIntensitySlider, Path=Value, StringFormat={}{0:F2}}" 
+                       VerticalAlignment="Center" Margin="5"/>
         </StackPanel>
     </Grid>
 </Window>
