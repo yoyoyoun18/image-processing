@@ -11,6 +11,8 @@ namespace ImageProcessingByOpenCV
     public partial class MainWindow : System.Windows.Window
     {
         private Mat _originalImage;
+        private Mat _processedImage;
+        private bool _isProcessing = false;
 
         public MainWindow()
         {
@@ -29,6 +31,7 @@ namespace ImageProcessingByOpenCV
                 try
                 {
                     await LoadImageAsync(openFileDialog.FileName);
+                    await ApplyFiltersAsync();
                 }
                 catch (Exception ex)
                 {
@@ -41,91 +44,111 @@ namespace ImageProcessingByOpenCV
         {
             await Task.Run(() =>
             {
-                DisposeCurrentImage();
+                DisposeImages();
                 _originalImage = Cv2.ImRead(fileName);
+                _processedImage = _originalImage.Clone();
             });
 
-            DisplayImage.Source = MatToBitmapImage(_originalImage);
+            await UpdateDisplayImageAsync();
         }
 
-        /* grayIntensity = 0 -1 사이의 double 값
-         * 해당 값을 grayIntensity에 동적으로 받아와 흑백의 정도를 조절할 수 있다.
-         */
-        private async void ApplyAdjustableGrayscale_Click(object sender, RoutedEventArgs e)
+        private async void GrayIntensitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (_originalImage == null) return;
+            if (_originalImage == null || _isProcessing) return;
+            await ApplyFiltersAsync();
+        }
+
+        private async void BlurIntensitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_originalImage == null || _isProcessing) return;
+            await ApplyFiltersAsync();
+        }
+
+        private async Task ApplyFiltersAsync()
+        {
+            if (_isProcessing) return;
+            _isProcessing = true;
 
             try
             {
-                // 슬라이더에서 grayIntensity 값을 가져옵니다.
-                double grayIntensity = GrayIntensitySlider.Value;
+                await Task.Run(() =>
+                {
+                    _processedImage = _originalImage.Clone();
+                    ApplyGrayscale();
+                    ApplyGaussianBlur();
+                });
 
-                var processedImage = await Task.Run(() => ApplyGrayscale(grayIntensity));
-
-                DisplayImage.Source = processedImage;
+                await UpdateDisplayImageAsync();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error applying adjustable grayscale: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    MessageBox.Show($"Error applying filters: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                });
+            }
+            finally
+            {
+                _isProcessing = false;
             }
         }
 
-        private BitmapImage ApplyGrayscale(double grayIntensity)
+        private void ApplyGrayscale()
         {
+            double grayIntensity = 0;
+            Dispatcher.Invoke(() => grayIntensity = GrayIntensitySlider.Value);
+            if (grayIntensity == 0) return;
+
             using var gray = new Mat();
             Cv2.CvtColor(_originalImage, gray, ColorConversionCodes.BGR2GRAY);
-
             using var colorMat = new Mat();
             Cv2.CvtColor(gray, colorMat, ColorConversionCodes.GRAY2BGR);
-
-            using var result = new Mat();
-            Cv2.AddWeighted(_originalImage, 1 - grayIntensity, colorMat, grayIntensity, 0, result);
-
-            return MatToBitmapImage(result);
+            Cv2.AddWeighted(_originalImage, 1 - grayIntensity, colorMat, grayIntensity, 0, _processedImage);
         }
 
-        private BitmapImage MatToBitmapImage(Mat mat)
+        private void ApplyGaussianBlur()
         {
-            byte[] imageData;
-            Cv2.ImEncode(".png", mat, out imageData);
+            int blurIntensity = 0;
+            Dispatcher.Invoke(() => blurIntensity = (int)BlurIntensitySlider.Value);
+            if (blurIntensity == 0) return;
 
-            using var memoryStream = new MemoryStream(imageData);
-            var bitmapImage = new BitmapImage();
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.StreamSource = memoryStream;
-            bitmapImage.EndInit();
-            bitmapImage.Freeze(); // 다른 스레드에서 사용할 수 있게 합니다.
-
-            return bitmapImage;
+            int kernelSize = blurIntensity * 2 + 1;
+            Cv2.GaussianBlur(_processedImage, _processedImage, new OpenCvSharp.Size(kernelSize, kernelSize), 0);
         }
 
-        private void DisposeCurrentImage()
+        private async Task UpdateDisplayImageAsync()
+        {
+            if (_processedImage == null) return;
+
+            BitmapSource bitmap = null;
+            await Task.Run(() =>
+            {
+                using var stream = _processedImage.ToMemoryStream(".png");
+                var bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = stream;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+                bitmap = bitmapImage;
+            });
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                DisplayImage.Source = bitmap;
+            });
+        }
+
+        private void DisposeImages()
         {
             _originalImage?.Dispose();
+            _processedImage?.Dispose();
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            DisposeCurrentImage();
+            DisposeImages();
             base.OnClosed(e);
-        }
-
-        // 추가: 슬라이더 값이 변경될 때마다 그레이스케일을 적용합니다.
-        private async void GrayIntensitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (_originalImage == null) return;
-
-            try
-            {
-                double grayIntensity = e.NewValue;
-                var processedImage = await Task.Run(() => ApplyGrayscale(grayIntensity));
-                DisplayImage.Source = processedImage;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error applying grayscale: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
     }
 }
