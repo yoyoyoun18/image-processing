@@ -5,29 +5,58 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ImageProcessingByOpenCV"
         mc:Ignorable="d"
-        Title="Image Processing" Height="450" Width="800">
+        Title="이미지 처리" Height="600" Width="800">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Image x:Name="DisplayImage" Grid.Row="0" Stretch="Uniform"/>
-        <StackPanel Grid.Row="1" Orientation="Vertical">
-            <Button Content="Load Image" Click="LoadImage_Click" Margin="5"/>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Gray Intensity:" VerticalAlignment="Center" Margin="5"/>
-                <Slider x:Name="GrayIntensitySlider" Width="150" Minimum="0" Maximum="1" Value="0" 
-                        TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="5" ValueChanged="GrayIntensitySlider_ValueChanged"/>
-                <TextBlock Text="{Binding ElementName=GrayIntensitySlider, Path=Value, StringFormat={}{0:F2}}" 
-                           VerticalAlignment="Center" Margin="5"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        <Image x:Name="DisplayImage" Grid.Column="0" Stretch="Uniform"/>
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Vertical" Margin="10">
+                <Button Content="이미지 불러오기" Click="LoadImage_Click" Margin="0,0,0,10"/>
+
+                <TextBlock Text="처리 모드 선택:" FontWeight="Bold" Margin="0,10,0,5"/>
+                <StackPanel Margin="10,0,0,10">
+                    <RadioButton Content="원본 이미지" Tag="None" Checked="ProcessingMode_Changed" IsChecked="True"/>
+                    <RadioButton Content="그레이스케일" Tag="Grayscale" Checked="ProcessingMode_Changed"/>
+                    <RadioButton Content="가우시안 블러" Tag="GaussianBlur" Checked="ProcessingMode_Changed"/>
+                    <RadioButton Content="엣지 감지" Tag="EdgeDetection" Checked="ProcessingMode_Changed"/>
+                    <RadioButton Content="색상 감지" Tag="ColorDetection" Checked="ProcessingMode_Changed"/>
+                </StackPanel>
+
+                <TextBlock Text="그레이스케일 강도:" Margin="0,5"/>
+                <StackPanel Orientation="Horizontal">
+                    <Slider x:Name="GrayIntensitySlider" Width="150" Minimum="0" Maximum="1" Value="0" 
+                            TickFrequency="0.1" IsSnapToTickEnabled="True" ValueChanged="SliderValueChanged"/>
+                    <TextBlock Text="{Binding ElementName=GrayIntensitySlider, Path=Value, StringFormat={}{0:F2}}" 
+                               VerticalAlignment="Center" Margin="5,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Text="가우시안 블러:" Margin="0,10,0,5"/>
+                <StackPanel Orientation="Horizontal">
+                    <Slider x:Name="BlurIntensitySlider" Width="150" Minimum="0" Maximum="50" Value="0" 
+                            TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="SliderValueChanged"/>
+                    <TextBlock Text="{Binding ElementName=BlurIntensitySlider, Path=Value, StringFormat={}{0:F0}}" 
+                               VerticalAlignment="Center" Margin="5,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Text="엣지 검출 임계값:" Margin="0,10,0,5"/>
+                <StackPanel Orientation="Horizontal">
+                    <Slider x:Name="EdgeThresholdSlider" Width="150" Minimum="0" Maximum="255" Value="100" 
+                            TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="SliderValueChanged"/>
+                    <TextBlock Text="{Binding ElementName=EdgeThresholdSlider, Path=Value, StringFormat={}{0:F0}}" 
+                               VerticalAlignment="Center" Margin="5,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Text="색상 검출:" Margin="0,10,0,5"/>
+                <ComboBox x:Name="ColorDetectionComboBox" Width="150" SelectionChanged="ColorDetectionComboBox_SelectionChanged">
+                    <ComboBoxItem Content="없음"/>
+                    <ComboBoxItem Content="빨강"/>
+                    <ComboBoxItem Content="초록"/>
+                    <ComboBoxItem Content="파랑"/>
+                </ComboBox>
             </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Gaussian Blur:" VerticalAlignment="Center" Margin="5"/>
-                <Slider x:Name="BlurIntensitySlider" Width="150" Minimum="0" Maximum="50" Value="0" 
-                        TickFrequency="1" IsSnapToTickEnabled="True" Margin="5" ValueChanged="BlurIntensitySlider_ValueChanged"/>
-                <TextBlock Text="{Binding ElementName=BlurIntensitySlider, Path=Value, StringFormat={}{0:F0}}" 
-                           VerticalAlignment="Center" Margin="5"/>
-            </StackPanel>
-        </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>
