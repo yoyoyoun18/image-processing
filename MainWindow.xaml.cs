@@ -31,6 +31,12 @@ namespace ImageProcessingByOpenCV
             InitializeComponent();
         }
 
+        /// <summary>
+        /// 사용자가 이미지 파일이 들어있는 폴더를 선택할 수 있게 하는 메서드입니다.
+        /// 선택된 폴더 내의 이미지 파일들을 로드하여 리스트에 표시합니다.
+        /// </summary>
+        /// <param name="sender">이벤트를 발생시킨 객체</param>
+        /// <param name="e">이벤트 관련 매개변수</param>
         private void SelectFolder_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
@@ -50,6 +56,10 @@ namespace ImageProcessingByOpenCV
             }
         }
 
+        /// <summary>
+        /// 지정된 폴더에서 지원되는 이미지 파일들을 찾아 리스트에 로드하는 메서드입니다.
+        /// </summary>
+        /// <param name="folderPath">이미지 파일을 검색할 폴더의 경로 (string)</param>
         private void LoadImagesFromFolder(string folderPath)
         {
             string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".bmp", ".gif" };
@@ -61,6 +71,11 @@ namespace ImageProcessingByOpenCV
             ImageListBox.ItemsSource = imageFiles;
         }
 
+        /// <summary>
+        /// 이미지 리스트에서 선택된 이미지를 로드하고 현재 선택된 필터를 적용하는 메서드입니다.
+        /// </summary>
+        /// <param name="sender">이벤트를 발생시킨 객체</param>
+        /// <param name="e">마우스 이벤트 관련 매개변수</param>
         private async void ImageListBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (ImageListBox.SelectedItem is string selectedFileName)
@@ -71,6 +86,11 @@ namespace ImageProcessingByOpenCV
             }
         }
 
+        /// <summary>
+        /// 지정된 파일 경로에서 이미지를 비동기적으로 로드하는 메서드입니다.
+        /// </summary>
+        /// <param name="fileName">로드할 이미지 파일의 전체 경로 (string)</param>
+        /// <returns>비동기 작업을 나타내는 Task</returns>
         private async Task LoadImageAsync(string fileName)
         {
             await Task.Run(() =>
@@ -83,6 +103,12 @@ namespace ImageProcessingByOpenCV
             await UpdateDisplayImageAsync();
         }
 
+        /// <summary>
+        /// 이미지 처리 모드가 변경될 때 호출되는 메서드입니다.
+        /// 새로 선택된 필터를 적용합니다.
+        /// </summary>
+        /// <param name="sender">이벤트를 발생시킨 객체</param>
+        /// <param name="e">이벤트 관련 매개변수</param>
         private async void ProcessingMode_Changed(object sender, RoutedEventArgs e)
         {
             if (_originalImage == null || _isProcessing) return;
@@ -94,18 +120,34 @@ namespace ImageProcessingByOpenCV
             }
         }
 
+        /// <summary>
+        /// 필터 강도 슬라이더의 값이 변경될 때 호출되는 메서드입니다.
+        /// 변경된 값으로 현재 선택된 필터를 다시 적용합니다.
+        /// </summary>
+        /// <param name="sender">이벤트를 발생시킨 객체</param>
+        /// <param name="e">값 변경 이벤트 관련 매개변수</param>
         private async void SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (_originalImage == null || _isProcessing) return;
             await ApplySelectedFilterAsync();
         }
 
+        /// <summary>
+        /// 색상 검출을 위한 컴보박스의 선택이 변경될 때 호출되는 메서드입니다.
+        /// 선택된 색상에 대한 검출 필터를 적용합니다.
+        /// </summary>
+        /// <param name="sender">이벤트를 발생시킨 객체</param>
+        /// <param name="e">선택 변경 이벤트 관련 매개변수</param>
         private async void ColorDetectionComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             if (_originalImage == null || _isProcessing) return;
             await ApplySelectedFilterAsync();
         }
 
+        /// <summary>
+        /// 현재 선택된 필터를 이미지에 비동기적으로 적용하는 메서드입니다.
+        /// </summary>
+        /// <returns>비동기 작업을 나타내는 Task</returns>
         private async Task ApplySelectedFilterAsync()
         {
             if (_isProcessing) return;
@@ -152,6 +194,10 @@ namespace ImageProcessingByOpenCV
             }
         }
 
+        /// <summary>
+        /// 이미지에 그레이스케일 필터를 적용하는 메서드입니다.
+        /// 슬라이더로 조절된 강도에 따라 원본 이미지와 그레이스케일 이미지를 혼합합니다.
+        /// </summary>
         private void ApplyGrayscale()
         {
             double grayIntensity = 0;
@@ -164,6 +210,10 @@ namespace ImageProcessingByOpenCV
             Cv2.AddWeighted(_originalImage, 1 - grayIntensity, colorMat, grayIntensity, 0, _processedImage);
         }
 
+        /// <summary>
+        /// 이미지에 가우시안 블러 필터를 적용하는 메서드입니다.
+        /// 슬라이더로 조절된 강도에 따라 블러의 정도가 결정됩니다.
+        /// </summary>
         private void ApplyGaussianBlur()
         {
             int blurIntensity = 0;
@@ -173,6 +223,10 @@ namespace ImageProcessingByOpenCV
             Cv2.GaussianBlur(_processedImage, _processedImage, new OpenCvSharp.Size(kernelSize, kernelSize), 0);
         }
 
+        /// <summary>
+        /// 이미지에 엣지 검출 필터를 적용하는 메서드입니다.
+        /// 슬라이더로 조절된 임계값에 따라 엣지 검출의 민감도가 결정됩니다.
+        /// </summary>
         private void ApplyEdgeDetection()
         {
             int threshold = 0;
@@ -183,6 +237,10 @@ namespace ImageProcessingByOpenCV
             Cv2.CvtColor(edges, _processedImage, ColorConversionCodes.GRAY2BGR);
         }
 
+        /// <summary>
+        /// 이미지에서 특정 색상을 검출하는 메서드입니다.
+        /// 컴보박스에서 선택된 색상(빨강, 초록, 파랑)에 따라 해당 색상 영역만 표시합니다.
+        /// </summary>
         private void ApplyColorDetection()
         {
             string selectedColor = "";
@@ -228,6 +286,15 @@ namespace ImageProcessingByOpenCV
             }
         }
 
+        /// <summary>
+        /// 이미지에 마스크를 적용하여 특정 색상 범위만 표시하는 메서드입니다.
+        /// </summary>
+        /// <param name="sourceImage">원본 이미지 (Mat)</param>
+        /// <param name="hsvImage">HSV 색상 공간으로 변환된 이미지 (Mat)</param>
+        /// <param name="lowerBound">검출할 색상의 하한 범위 (Scalar)</param>
+        /// <param name="upperBound">검출할 색상의 상한 범위 (Scalar)</param>
+        /// <param name="colorName">검출할 색상의 이름 (string)</param>
+        /// <returns>마스크가 적용된 결과 이미지 (Mat)</returns>
         private Mat ApplyMask(Mat sourceImage, Mat hsvImage, Scalar lowerBound, Scalar upperBound, string colorName)
         {
             using var mask = new Mat();
@@ -239,6 +306,11 @@ namespace ImageProcessingByOpenCV
             return resultImage;
         }
 
+        /// <summary>
+        /// 처리된 이미지를 UI에 표시하는 메서드입니다.
+        /// 원본 이미지와 처리된 이미지를 비동기적으로 UI에 업데이트합니다.
+        /// </summary>
+        /// <returns>비동기 작업을 나타내는 Task</returns>
         private async Task UpdateDisplayImageAsync()
         {
             if (_originalImage == null || _processedImage == null) return;
@@ -258,6 +330,11 @@ namespace ImageProcessingByOpenCV
             });
         }
 
+        /// <summary>
+        /// OpenCV의 Mat 객체를 WPF에서 사용할 수 있는 BitmapSource로 변환하는 메서드입니다.
+        /// </summary>
+        /// <param name="image">변환할 Mat 객체</param>
+        /// <returns>변환된 BitmapSource 객체</returns>
         private BitmapSource ConvertMatToBitmapSource(Mat image)
         {
             using var stream = image.ToMemoryStream(".png");
@@ -270,12 +347,20 @@ namespace ImageProcessingByOpenCV
             return bitmapImage;
         }
 
+        /// <summary>
+        /// 현재 사용 중인 이미지 객체들을 메모리에서 해제하는 메서드입니다.
+        /// </summary>
         private void DisposeImages()
         {
             _originalImage?.Dispose();
             _processedImage?.Dispose();
         }
 
+        /// <summary>
+        /// 윈도우가 닫힐 때 호출되는 메서드입니다.
+        /// 사용된 리소스를 정리합니다.
+        /// </summary>
+        /// <param name="e">이벤트 관련 매개변수</param>
         protected override void OnClosed(EventArgs e)
         {
             DisposeImages();
